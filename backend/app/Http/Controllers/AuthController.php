@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Http\Requests\RegisterRequest;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -42,17 +42,9 @@ class AuthController extends Controller
         return view('auth.register', ['products' => Product::query()->where('is_active', true)->orderBy('name')->get()]);
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'company' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'],
-            'whatsapp' => ['required', 'string', 'max:30'],
-            'email' => ['required', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'interested_product_id' => ['nullable', 'exists:products,id'],
-        ]);
+        $data = $request->validated();
 
         $user = User::create($data + ['status' => UserStatus::Pending, 'role' => UserRole::Student]);
         Auth::login($user);
