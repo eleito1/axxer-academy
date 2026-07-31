@@ -65,6 +65,40 @@ class StudentExperienceTest extends TestCase
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Cursos mais assistidos')->assertSee($course->title);
     }
 
+    public function test_lesson_sidebar_has_one_accessible_current_icon_in_every_course_position(): void
+    {
+        [$student, $product, $course, $module, $first] = $this->tree();
+        $middle = Lesson::create(['module_id' => $module->id, 'title' => 'Aula 2', 'video_url' => 'https://youtu.be/bbbbbbbbbbb', 'duration' => 100, 'order' => 2, 'published' => true]);
+        $last = Lesson::create(['module_id' => $module->id, 'title' => 'Aula 3', 'video_url' => 'https://youtu.be/ccccccccccc', 'duration' => 100, 'order' => 3, 'published' => true]);
+
+        $firstResponse = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $first]))->assertOk();
+        $this->assertSame(1, substr_count($firstResponse->getContent(), 'aria-current="page"'));
+        $this->assertSame(1, substr_count($firstResponse->getContent(), 'Aula atual:'));
+        $firstResponse->assertSee('Aula não iniciada:')->assertDontSee('Aula concluída:');
+
+        LessonProgress::whereBelongsTo($student)->whereBelongsTo($first)->update(['completed_at' => now(), 'last_seconds' => 100]);
+
+        foreach ([$middle, $last] as $current) {
+            $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $current]))->assertOk();
+            $this->assertSame(1, substr_count($response->getContent(), 'aria-current="page"'));
+            $this->assertSame(1, substr_count($response->getContent(), 'Aula atual:'));
+            $response->assertSee('Aula concluída:')->assertSee('Aula não iniciada:');
+        }
+
+        foreach ([$middle, $last] as $lesson) {
+            LessonProgress::updateOrCreate(
+                ['user_id' => $student->id, 'lesson_id' => $lesson->id],
+                ['completed_at' => now(), 'last_seconds' => 100],
+            );
+        }
+
+        $completedCourse = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $last]))->assertOk();
+        $this->assertSame(1, substr_count($completedCourse->getContent(), 'aria-current="page"'));
+        $this->assertSame(1, substr_count($completedCourse->getContent(), 'Aula atual:'));
+        $this->assertSame(2, substr_count($completedCourse->getContent(), 'Aula concluída:'));
+        $completedCourse->assertDontSee('Aula não iniciada:');
+    }
+
     private function tree(bool $releaseProduct = true): array
     {
         $student = User::factory()->create(['role' => UserRole::Student, 'status' => UserStatus::Approved]);
