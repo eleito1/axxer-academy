@@ -50,6 +50,8 @@ class UxExperienceTest extends TestCase
         $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
             ->assertOk()
             ->assertSee('id="lesson-player"', false)
+            ->assertSee('class="lesson-player-shell"', false)
+            ->assertSee('class="lesson-player-ratio"', false)
             ->assertSee('id="lesson-title"', false)
             ->assertSee('id="course-curriculum"', false)
             ->assertSee('Conteúdo da aula')
@@ -81,12 +83,42 @@ class UxExperienceTest extends TestCase
         $progressPosition = strpos($content, 'id="course-progress"');
         $this->assertTrue($progressPosition > $lessonActionsPosition);
         $this->assertTrue($progressPosition < $curriculumPosition);
-        $this->assertStringContainsString(".player {\n            position: relative;\n            overflow: visible;", $content);
-        $this->assertStringNotContainsString(".player {\n            position: relative;\n            overflow: hidden;", $content);
+        $this->assertStringContainsString('<div class="lesson-player-ratio">', $content);
 
         $this->assertSame(1, substr_count($content, 'aria-current="page"'));
         $this->assertSame(1, substr_count($content, 'Aula atual:'));
         $this->assertSame(1, substr_count($content, 'role="progressbar"'));
+    }
+
+    public function test_lesson_player_uses_responsive_wrappers_without_horizontal_overflow_rules(): void
+    {
+        [$student, $product, $course, $module, $lesson] = $this->learningTree();
+
+        $content = $this->actingAs($student)
+            ->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
+            ->assertOk()
+            ->getContent();
+
+        $css = $this->lessonPlayerCss($content);
+
+        $this->assertStringContainsString('.lesson-player-shell,', $css);
+        $this->assertStringContainsString('box-sizing: border-box;', $css);
+        $this->assertStringContainsString('min-width: 0;', $css);
+        $this->assertStringContainsString('max-width: 100%;', $css);
+        $this->assertMatchesRegularExpression('/\.player-card\s*\{[^}]*width: 100%;[^}]*padding: 0;/s', $css);
+        $this->assertMatchesRegularExpression('/\.lesson-player-shell\s*\{[^}]*display: block;[^}]*width: 100%;[^}]*margin: 0;[^}]*padding: 0;/s', $css);
+        $this->assertMatchesRegularExpression('/\.lesson-player-ratio\s*\{[^}]*display: block;[^}]*position: relative;[^}]*width: 100%;[^}]*aspect-ratio: 16 \/ 9;[^}]*overflow: visible;/s', $css);
+        $this->assertMatchesRegularExpression('/\.lesson-player-ratio iframe\s*\{[^}]*display: block;[^}]*width: 100%;[^}]*max-width: 100%;[^}]*height: 100%;[^}]*margin: 0;[^}]*border: 0;/s', $css);
+
+        foreach ([320, 360, 375, 390, 414, 430, 768, 1024] as $viewport) {
+            $this->assertStringNotContainsString('100vw', $css, "Player CSS must not depend on viewport width at {$viewport}px.");
+            $this->assertStringNotContainsString('calc(100vw', $css, "Player CSS must not exceed the container at {$viewport}px.");
+            $this->assertStringNotContainsString('transform: scale', $css, "Player CSS must not scale the iframe at {$viewport}px.");
+            $this->assertStringNotContainsString('margin-left: -', $css, "Player CSS must not use negative horizontal margins at {$viewport}px.");
+            $this->assertStringNotContainsString('left: -', $css, "Player CSS must not pull the iframe out of bounds at {$viewport}px.");
+            $this->assertStringNotContainsString('right: -', $css, "Player CSS must not pull the iframe out of bounds at {$viewport}px.");
+            $this->assertStringNotContainsString('overflow-x', $css, "Player CSS must not hide horizontal overflow at {$viewport}px.");
+        }
     }
 
     public function test_google_drive_player_wrapper_does_not_clip_native_controls(): void
@@ -96,18 +128,17 @@ class UxExperienceTest extends TestCase
 
         $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
             ->assertOk()
-            ->assertSee('class="player drive-player"', false)
+            ->assertSee('class="lesson-player-shell"', false)
+            ->assertSee('class="lesson-player-ratio"', false)
             ->assertSee('data-provider="google-drive"', false)
             ->assertSee('loading="eager"', false)
             ->assertSee('https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/preview', false)
-            ->assertSee('.player.drive-player { min-height: clamp(224px, 58vw, 260px); }', false)
-            ->assertSee('.player.drive-player { min-height: 0; }', false)
             ->assertDontSee('.player::before', false)
             ->assertDontSee('.player::after', false);
 
         $content = $response->getContent();
-        $this->assertStringContainsString(".player {\n            position: relative;\n            overflow: visible;", $content);
-        $this->assertStringNotContainsString(".player {\n            position: relative;\n            overflow: hidden;", $content);
+        $this->assertStringContainsString(".lesson-player-ratio {\n            display: block;", $content);
+        $this->assertStringNotContainsString('width: 100vw', $this->lessonPlayerCss($content));
     }
 
     public function test_completed_lesson_keeps_compact_buttons_progress_and_certificate_state(): void
@@ -165,5 +196,12 @@ class UxExperienceTest extends TestCase
         $student->products()->attach($product);
 
         return [$student, $product, $course, $module, $lesson];
+    }
+
+    private function lessonPlayerCss(string $content): string
+    {
+        preg_match_all('/<style>(.*?)<\/style>/s', $content, $matches);
+
+        return collect($matches[1])->first(fn (string $css) => str_contains($css, '.lesson-player-shell')) ?? '';
     }
 }

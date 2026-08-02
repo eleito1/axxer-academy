@@ -3,6 +3,15 @@
         .lesson-shell { display: grid; gap: 16px; }
         .lesson-back { width: fit-content; }
         .classroom { display: grid; grid-template-areas: "player" "curriculum"; gap: 16px; align-items: start; }
+        .lesson-shell,
+        .classroom,
+        .player-card,
+        .lesson-player-shell,
+        .lesson-player-ratio {
+            box-sizing: border-box;
+            min-width: 0;
+            max-width: 100%;
+        }
         .curriculum-panel {
             grid-area: curriculum;
             display: grid;
@@ -47,22 +56,31 @@
         .lesson-label strong, .lesson-label small { display: block; }
         .lesson-label strong { font-size: 12px; line-height: 1.15; }
         .lesson-label small { margin-top: 1px; color: var(--muted); font-size: 10px; }
-        .player-card { grid-area: player; padding: 0; border: 0; box-shadow: none; background: transparent; }
-        .player {
-            position: relative;
-            overflow: visible;
-            border-radius: 0;
-            border: 1px solid var(--line);
-            background: var(--surface);
-            aspect-ratio: 16 / 9;
+        .player-card { grid-area: player; width: 100%; padding: 0; border: 0; box-shadow: none; background: transparent; }
+        .lesson-player-shell {
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 0;
         }
-        .player.drive-player { min-height: clamp(224px, 58vw, 260px); }
-        .player iframe {
+        .lesson-player-ratio {
+            display: block;
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: 1px solid var(--line);
+            border-radius: 0;
+            background: var(--surface);
+            overflow: visible;
+        }
+        .lesson-player-ratio iframe {
             position: absolute;
             inset: 0;
             display: block;
             width: 100%;
+            max-width: 100%;
             height: 100%;
+            margin: 0;
             border: 0;
             background: var(--surface);
         }
@@ -93,7 +111,6 @@
                 border-right: 1px solid var(--line);
                 padding: 4px 18px 0 0;
             }
-            .player.drive-player { min-height: 0; }
             .lesson-actions { display: flex; align-items: center; }
             .lesson-actions .push { margin-left: auto; }
         }
@@ -105,8 +122,10 @@
         <div class="classroom">
             <section id="lesson-player-card" class="card player-card" tabindex="-1" aria-labelledby="lesson-title">
                 @php($isDrivePlayer = str_contains($embedUrl, 'drive.google.com'))
-                <div class="player {{ $isDrivePlayer ? 'drive-player' : '' }}" id="lesson-player" data-provider="{{ $isDrivePlayer ? 'google-drive' : 'standard' }}">
-                    <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <div class="lesson-player-shell" id="lesson-player" data-provider="{{ $isDrivePlayer ? 'google-drive' : 'standard' }}">
+                    <div class="lesson-player-ratio">
+                        <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                    </div>
                 </div>
 
                 <div class="lesson-info">
