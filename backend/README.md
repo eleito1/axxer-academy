@@ -1,66 +1,240 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AXXER Academy
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+AXXER Academy é uma plataforma Laravel para ensino online, liberação de produtos e acompanhamento de progresso dos alunos.
 
-## About Laravel
+A fase UX 2.0 transforma a experiência do aluno em uma interface mobile-first, premium e focada em continuidade de estudo, sem alterar banco de dados, regras acadêmicas, autenticação, autorização, progresso ou player.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Requisitos
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2 ou superior com `pdo_mysql`, `mbstring`, `openssl`, `fileinfo` e `zip`
+- Composer 2
+- Node.js e npm
+- MySQL 8 para ambiente local operacional
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Preparação Local
 
-## Learning Laravel
+1. Instale dependências PHP:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+   ```bash
+   composer install
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+2. Instale dependências de frontend:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+   ```bash
+   npm install
+   ```
 
-## Laravel Sponsors
+3. Crie o `.env` local:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-### Premium Partners
+4. Configure o banco local no `.env`.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+5. Para uma instalação nova, rode migrations e seeds iniciais somente no ambiente local previsto:
 
-## Contributing
+   ```bash
+   php artisan migrate --seed
+   ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+6. Suba a aplicação:
 
-## Code of Conduct
+   ```bash
+   php artisan serve
+   npm run dev
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Também existe o script combinado:
 
-## Security Vulnerabilities
+```bash
+composer run dev
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Atalhos Locais
 
-## License
+Opcionalmente, configure aliases no seu shell:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+alias academy-up='cd /Users/marcelo/projetos/axxer-academy/backend && composer run dev'
+alias academy-down='echo "Encerre os processos do academy-up com Ctrl+C no terminal onde eles estão rodando."'
+```
+
+`academy-up` inicia servidor Laravel, fila, logs e Vite pelo script `composer run dev`.
+
+`academy-down` é documentado como orientação segura para evitar encerrar processos indevidos automaticamente.
+
+## Estrutura
+
+```text
+backend/
+  app/
+    Http/Controllers/
+    Http/Requests/
+    Models/
+    Policies/
+    Services/
+    Support/
+  database/
+    migrations/
+    seeders/
+  resources/
+    views/
+      academy/
+      admin/
+      auth/
+      components/
+  routes/
+  tests/
+```
+
+## Fluxo Acadêmico
+
+A hierarquia principal é:
+
+```text
+Produto -> Curso -> Módulo -> Aula
+```
+
+Produtos controlam acesso. Cursos e aulas podem ficar publicados ou em rascunho. Alunos visualizam apenas produtos liberados, cursos publicados e aulas publicadas.
+
+O cadastro público cria alunos com status `pendente`. Usuários `aprovado` acessam o dashboard. Usuários `pendente` ou `bloqueado` ficam na tela de status.
+
+## UX 2.0
+
+A fase UX 2.0 prioriza:
+
+- experiência mobile-first;
+- menos densidade visual;
+- cards com hierarquia clara;
+- botões grandes e acessíveis;
+- foco no próximo passo do aluno;
+- player como protagonista;
+- currículo em accordion no mobile;
+- sidebar elegante no desktop;
+- empty states melhores;
+- microinterações discretas;
+- preparação para Dark Mode via tokens CSS.
+
+## Design System
+
+O layout base define tokens e componentes reutilizáveis:
+
+- cores: `--brand`, `--surface`, `--text`, `--muted`, `--line`, `--ok`, `--danger`;
+- espaçamentos e raios: `--radius`, `--radius-lg`, `--container`;
+- componentes CSS: `.btn`, `.card`, `.soft-card`, `.badge`, `.chip`, `.progress-track`, `.course-card`, `.empty-state`;
+- componentes Blade:
+  - `x-ui.button`
+  - `x-ui.progress`
+  - `x-ui.empty-state`
+  - `x-ui.section-header`
+
+As views antigas continuam compatíveis com classes legadas como `.card`, `.btn`, `.grid`, `.badge`, `.muted`, `.actions` e `.user`, preservando telas administrativas sem refatoração forçada.
+
+## Dashboard Do Aluno
+
+O dashboard mostra:
+
+- saudação contextual;
+- progresso geral;
+- última aula assistida;
+- botão `Continuar assistindo`;
+- cursos disponíveis;
+- produtos liberados;
+- cursos em andamento;
+- cursos concluídos.
+
+Quando não há conteúdo ou progresso, a interface mostra empty states específicos em vez de blocos vazios.
+
+## Player
+
+O vídeo ocupa a largura principal disponível e mantém proporção estável para evitar layout shift.
+
+No mobile, o conteúdo do curso fica em accordion. No desktop, o currículo permanece lateral e fixo durante a rolagem.
+
+O salvamento de progresso continua igual:
+
+- sincronização a cada 15 segundos;
+- sincronização ao ocultar a aba;
+- sincronização ao sair da página;
+- conclusão manual pelo botão;
+- conclusão automática ao atingir 90% da duração cadastrada.
+
+## Acessibilidade
+
+A UX 2.0 inclui:
+
+- link para pular ao conteúdo;
+- foco visível;
+- `aria-current="page"` na aula atual;
+- rótulos de status para aulas atuais, concluídas e não iniciadas;
+- `role="progressbar"` com valores;
+- feedback de erro com `role="alert"`;
+- status de sucesso com `role="status"`;
+- contraste AA nos estados principais.
+
+## Performance
+
+As telas usam CSS local e componentes Blade simples, sem novas dependências JavaScript.
+
+O player usa `aspect-ratio` para reduzir reflow e layout shift. Microinterações são feitas com transições curtas em CSS.
+
+## Banco E Segurança
+
+Não execute em produção:
+
+- `migrate:fresh`
+- `migrate:refresh`
+- `migrate:reset`
+- `migrate:rollback`
+- `db:wipe`
+- seeders fora do fluxo local previsto
+
+O projeto possui proteção em `App\Support\DatabaseCommandGuard` para bloquear comandos destrutivos fora de testes isolados.
+
+## Testes
+
+A suíte usa SQLite em memória via `phpunit.xml`:
+
+```dotenv
+APP_ENV=testing
+DB_CONNECTION=sqlite
+DB_DATABASE=:memory:
+```
+
+Execute:
+
+```bash
+php artisan test
+```
+
+## Formatação
+
+Execute Laravel Pint:
+
+```bash
+./vendor/bin/pint
+```
+
+Para verificar sem alterar arquivos:
+
+```bash
+./vendor/bin/pint --test
+```
+
+## Checklist Antes De Commit
+
+```bash
+php artisan test
+./vendor/bin/pint
+git diff --check
+git status --short --branch
+```
+
+Mensagem sugerida para esta fase:
+
+```text
+feat: redesign completo da experiência do aluno
+```
