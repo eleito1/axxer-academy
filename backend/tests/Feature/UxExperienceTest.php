@@ -37,17 +37,62 @@ class UxExperienceTest extends TestCase
     public function test_lesson_player_uses_mobile_curriculum_accordion_without_duplicate_current_state(): void
     {
         [$student, $product, $course, $module, $lesson] = $this->learningTree();
+        Lesson::create([
+            'module_id' => $module->id,
+            'title' => 'Segunda venda',
+            'description' => 'Aula de continuidade.',
+            'video_url' => 'https://youtu.be/bbbbbbbbbbb',
+            'duration' => 120,
+            'order' => 2,
+            'published' => true,
+        ]);
 
         $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
             ->assertOk()
-            ->assertSee('class="player"', false)
-            ->assertSee('<details class="curriculum-panel" open>', false)
+            ->assertSee('id="lesson-player"', false)
+            ->assertSee('id="lesson-title"', false)
+            ->assertSee('id="course-curriculum"', false)
             ->assertSee('Conteúdo do curso')
+            ->assertSee('aria-controls="course-curriculum-body"', false)
+            ->assertSee('aria-expanded="false"', false)
             ->assertSee('aria-current="page"', false)
-            ->assertSee('Aula atual:');
+            ->assertSee('Aula atual:')
+            ->assertSee('?focus=player', false)
+            ->assertSee('scrollToPlayerFromLessonList')
+            ->assertSee("url.searchParams.delete('focus')", false)
+            ->assertSee('prefers-reduced-motion', false)
+            ->assertDontSee('.player::before', false)
+            ->assertDontSee('.player::after', false);
 
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-current="page"'));
-        $this->assertSame(1, substr_count($response->getContent(), 'Aula atual:'));
+        $content = $response->getContent();
+        $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'id="lesson-player-card"'));
+        $this->assertLessThan(strpos($content, 'id="lesson-title"'), strpos($content, 'id="lesson-player"'));
+        $this->assertLessThan(strpos($content, 'class="lesson-actions"'), strpos($content, 'id="lesson-title"'));
+        $this->assertLessThan(strpos($content, 'id="course-progress"'), strpos($content, 'class="lesson-actions"'));
+        $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'id="course-progress"'));
+
+        $this->assertSame(1, substr_count($content, 'aria-current="page"'));
+        $this->assertSame(1, substr_count($content, 'Aula atual:'));
+        $this->assertSame(1, substr_count($content, 'role="progressbar"'));
+    }
+
+    public function test_completed_lesson_keeps_large_buttons_progress_and_certificate_state(): void
+    {
+        [$student, $product, $course, $module, $lesson] = $this->learningTree();
+        LessonProgress::create([
+            'user_id' => $student->id,
+            'lesson_id' => $lesson->id,
+            'completed_at' => now(),
+            'last_seconds' => 100,
+        ]);
+
+        $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
+            ->assertOk()
+            ->assertSee('Aula concluída')
+            ->assertSee('disabled', false)
+            ->assertSee('Certificado disponível')
+            ->assertSee('100%')
+            ->assertSee('1/1 aulas');
     }
 
     public function test_empty_dashboard_states_are_clear_for_student_without_released_products(): void

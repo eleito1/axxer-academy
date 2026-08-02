@@ -22,7 +22,7 @@
                     </div>
                     <div class="stack" style="margin-top: 16px">
                         @foreach($module->lessons as $lesson)
-                            <a class="soft-card spread" href="{{ route('academy.lessons.show', [$product, $course, $module, $lesson]) }}" style="text-decoration:none">
+                            <a class="soft-card spread" href="{{ route('academy.lessons.show', [$product, $course, $module, $lesson]) }}?focus=player" style="text-decoration:none">
                                 <strong>{{ $lesson->title }}</strong>
                                 <span class="muted">{{ $lesson->duration ? gmdate('i:s', $lesson->duration) : '--:--' }}</span>
                             </a>

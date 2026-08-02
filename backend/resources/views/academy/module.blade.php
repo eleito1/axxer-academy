@@ -18,7 +18,7 @@
                             <p>{{ $lesson->description }}</p>
                             <span class="muted">{{ $lesson->duration ? gmdate('i:s', $lesson->duration) : '--:--' }}</span>
                         </div>
-                        <x-ui.button class="full-mobile" :href="route('academy.lessons.show', [$product, $course, $module, $lesson])">Assistir aula</x-ui.button>
+                        <x-ui.button class="full-mobile" :href="route('academy.lessons.show', [$product, $course, $module, $lesson]).'?focus=player'">Assistir aula</x-ui.button>
                     </div>
                 </article>
             @empty

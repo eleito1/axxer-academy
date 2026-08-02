@@ -152,7 +152,17 @@ Quando não há conteúdo ou progresso, a interface mostra empty states específ
 
 O vídeo ocupa a largura principal disponível e mantém proporção estável para evitar layout shift.
 
-No mobile, o conteúdo do curso fica em accordion. No desktop, o currículo permanece lateral e fixo durante a rolagem.
+No mobile, a ordem da tela de aula é:
+
+```text
+Player -> Título -> Descrição -> Botões -> Progresso -> Conteúdo do curso
+```
+
+O conteúdo do curso fica em accordion acessível, com `aria-expanded` e `aria-controls`, recolhido no estado inicial mobile. No desktop, o currículo volta para a lateral esquerda e permanece fixo durante a rolagem.
+
+Links de aulas vindos de listas internas adicionam `?focus=player`. Ao carregar a nova aula, a página rola suavemente até o player considerando o cabeçalho fixo e remove o parâmetro da URL com `history.replaceState`. A rolagem respeita `prefers-reduced-motion`.
+
+O player não usa overlay permanente, opacidade reduzida, filtro, pseudo-elemento ou camada acima do iframe. Depois do carregamento, a área visível contém apenas o iframe e os controles nativos do provedor.
 
 O salvamento de progresso continua igual:
 
