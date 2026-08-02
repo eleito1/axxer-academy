@@ -1,14 +1,14 @@
 <x-app-layout title="{{ $lesson->title }} — AXXER Academy">
     <style>
-        .lesson-shell { display: grid; gap: 18px; }
+        .lesson-shell { display: grid; gap: 16px; }
         .lesson-back { width: fit-content; }
-        .classroom { display: grid; grid-template-areas: "player" "curriculum"; gap: 18px; align-items: start; }
+        .classroom { display: grid; grid-template-areas: "player" "curriculum"; gap: 16px; align-items: start; }
         .curriculum-panel {
             grid-area: curriculum;
             display: grid;
-            gap: 14px;
+            gap: 8px;
             border-top: 1px solid var(--line);
-            padding-top: 18px;
+            padding-top: 14px;
         }
         .curriculum-head {
             display: flex;
@@ -16,52 +16,61 @@
             justify-content: space-between;
             gap: 12px;
         }
-        .curriculum-head h2 { margin-bottom: 0; font-size: 22px; }
-        .course-summary { display: grid; gap: 6px; }
-        .module-title { padding: 12px 0 4px; color: var(--muted); font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+        .curriculum-head h2 { margin-bottom: 0; font-size: 18px; }
+        .module-title { padding: 10px 0 2px; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
         .lesson-list { display: grid; }
         .lesson-link {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             border-top: 1px solid var(--line);
             border-left: 0;
             color: var(--text);
-            min-height: 46px;
-            padding: 8px 0;
+            min-height: 36px;
+            padding: 5px 0;
             text-decoration: none;
-            transition: background .18s ease, border-color .18s ease, transform .18s ease;
+            transition: background .18s ease, border-color .18s ease;
         }
         .lesson-link:hover { background: color-mix(in srgb, var(--surface-soft) 56%, transparent); }
         .lesson-link.current { color: var(--brand); }
         .lesson-state {
             display: grid;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             flex: none;
             place-items: center;
             color: var(--muted);
         }
-        .lesson-state svg { display: block; width: 20px; height: 20px; }
+        .lesson-state svg { display: block; width: 17px; height: 17px; }
         .lesson-link.completed .lesson-state { color: var(--ok); }
         .lesson-link.current .lesson-state { color: var(--brand); }
         .lesson-label strong, .lesson-label small { display: block; }
-        .lesson-label strong { font-size: 13px; line-height: 1.2; }
-        .lesson-label small { margin-top: 2px; color: var(--muted); font-size: 11px; }
+        .lesson-label strong { font-size: 12px; line-height: 1.15; }
+        .lesson-label small { margin-top: 1px; color: var(--muted); font-size: 10px; }
         .player-card { grid-area: player; padding: 0; border: 0; box-shadow: none; background: transparent; }
         .player {
             position: relative;
-            overflow: hidden;
-            border-radius: var(--radius-lg);
+            overflow: visible;
+            border-radius: 0;
             border: 1px solid var(--line);
             background: var(--surface);
             aspect-ratio: 16 / 9;
         }
-        .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--surface); }
+        .player.drive-player { min-height: clamp(224px, 58vw, 260px); }
+        .player iframe {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: var(--surface);
+        }
         .lesson-info { display: grid; gap: 10px; padding: 18px 0 0; }
-        .lesson-actions { display: grid; gap: 8px; margin-top: 4px; padding-top: 14px; border-top: 1px solid var(--line); }
-        .lesson-actions .btn { min-height: 40px; padding: 9px 13px; font-size: 14px; }
-        .lesson-progress { display: grid; gap: 7px; padding-top: 4px; }
+        .lesson-actions { display: grid; gap: 7px; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }
+        .lesson-actions .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; }
+        .lesson-progress { display: grid; gap: 6px; padding-top: 2px; }
+        .lesson-progress strong { font-size: 13px; }
         .lesson-status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .certificate {
             border: 1px solid color-mix(in srgb, var(--ok) 28%, var(--ok-soft));
@@ -74,7 +83,7 @@
         .watch-note { color: var(--muted); font-size: 13px; }
 
         @media (min-width: 900px) {
-            .classroom { grid-template-areas: "curriculum player"; grid-template-columns: minmax(280px, 330px) minmax(0, 1fr); gap: 22px; }
+            .classroom { grid-template-areas: "curriculum player"; grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); gap: 22px; }
             .curriculum-panel {
                 position: sticky;
                 top: 86px;
@@ -84,6 +93,7 @@
                 border-right: 1px solid var(--line);
                 padding: 4px 18px 0 0;
             }
+            .player.drive-player { min-height: 0; }
             .lesson-actions { display: flex; align-items: center; }
             .lesson-actions .push { margin-left: auto; }
         }
@@ -94,8 +104,9 @@
 
         <div class="classroom">
             <section id="lesson-player-card" class="card player-card" tabindex="-1" aria-labelledby="lesson-title">
-                <div class="player" id="lesson-player">
-                    <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                @php($isDrivePlayer = str_contains($embedUrl, 'drive.google.com'))
+                <div class="player {{ $isDrivePlayer ? 'drive-player' : '' }}" id="lesson-player" data-provider="{{ $isDrivePlayer ? 'google-drive' : 'standard' }}">
+                    <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
                 </div>
 
                 <div class="lesson-info">
@@ -121,6 +132,13 @@
                         <button id="complete-button" class="btn" type="button" @disabled($progress->isCompleted())>{{ $progress->isCompleted() ? 'Aula concluída' : 'Marcar como concluída' }}</button>
                         <x-ui.button class="push {{ $nextUrl ? '' : 'disabled' }}" :href="$nextUrl ?? '#'">Próxima aula →</x-ui.button>
                     </div>
+
+                    <div class="lesson-progress">
+                        <div id="course-progress" class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $courseProgress['percentage'] }}" aria-label="Progresso do curso">
+                            <div class="progress-fill" style="width: {{ $courseProgress['percentage'] }}%"></div>
+                        </div>
+                        <strong><span id="progress-label">{{ $courseProgress['percentage'] }}%</span> concluído</strong>
+                    </div>
                 </div>
             </section>
 
@@ -129,13 +147,6 @@
                     <h2 id="course-curriculum-title">Conteúdo da aula</h2>
                     <span class="muted">{{ $courseProgress['completed'] }}/{{ $courseProgress['total'] }} aulas</span>
                 </div>
-                <div class="course-summary">
-                    <div>
-                        <p class="eyebrow">Curso</p>
-                        <h2 style="font-size: 22px">{{ $course->title }}</h2>
-                    </div>
-                </div>
-
                 @foreach($sidebar as $group)
                     <div class="module-title">{{ $group['module']->title }}</div>
                     <div class="lesson-list">
@@ -161,13 +172,6 @@
                         @endforeach
                     </div>
                 @endforeach
-
-                <div class="lesson-progress">
-                    <div id="course-progress" class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $courseProgress['percentage'] }}" aria-label="Progresso do curso">
-                        <div class="progress-fill" style="width: {{ $courseProgress['percentage'] }}%"></div>
-                    </div>
-                    <strong><span id="progress-label">{{ $courseProgress['percentage'] }}%</span> concluído</strong>
-                </div>
             </section>
         </div>
     </div>

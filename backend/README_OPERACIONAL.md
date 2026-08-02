@@ -22,6 +22,8 @@ O menu administrativo `Produtos` permite gerenciar a hierarquia Produto → Curs
 
 O player aceita URLs do YouTube (inclusive não listado) e arquivos compartilhados do Google Drive. Para o Drive, configure o arquivo como “Qualquer pessoa com o link — Visualizador”.
 
+O player do Google Drive é renderizado em iframe cross-origin. Escurecimento durante a reprodução, overlay interno, poster, thumbnail e controles nativos pertencem ao próprio Google Drive e não podem ser alterados pela Academy. A interface local deve apenas preservar espaço e evitar clipping do iframe, sem `overflow: hidden`, filtro, opacidade ou camada visual acima do player.
+
 ## Experiência e progresso do aluno
 
 Ao abrir uma aula, o acesso é registrado em `lesson_progress`. Enquanto a página da aula estiver visível, a posição é sincronizada a cada 15 segundos e também ao sair. A aula pode ser concluída manualmente ou automaticamente quando a posição registrada alcançar 90% da duração cadastrada.

@@ -2,7 +2,7 @@
 
 AXXER Academy é uma plataforma Laravel para ensino online, liberação de produtos e acompanhamento de progresso dos alunos.
 
-A fase UX 2.0 transforma a experiência do aluno em uma interface mobile-first, premium e focada em continuidade de estudo, sem alterar banco de dados, regras acadêmicas, autenticação, autorização, progresso ou player.
+A fase UX 2.x transforma a experiência do aluno em uma interface mobile-first, premium e focada em continuidade de estudo, sem alterar banco de dados, regras acadêmicas, autenticação, autorização, progresso ou regras do player.
 
 ## Requisitos
 
@@ -102,17 +102,18 @@ Produtos controlam acesso. Cursos e aulas podem ficar publicados ou em rascunho.
 
 O cadastro público cria alunos com status `pendente`. Usuários `aprovado` acessam o dashboard. Usuários `pendente` ou `bloqueado` ficam na tela de status.
 
-## UX 2.0
+## UX 2.x
 
-A fase UX 2.0 prioriza:
+A fase UX 2.x prioriza:
 
 - experiência mobile-first;
 - menos densidade visual;
 - cards com hierarquia clara;
-- botões grandes e acessíveis;
+- botões compactos e acessíveis;
 - foco no próximo passo do aluno;
 - player como protagonista;
-- currículo em accordion no mobile;
+- currículo sempre visível no mobile, sem accordion recolhido;
+- lista de aulas compacta para exibir mais conteúdo na primeira tela;
 - sidebar elegante no desktop;
 - empty states melhores;
 - microinterações discretas;
@@ -155,7 +156,7 @@ O vídeo ocupa a largura principal disponível e mantém proporção estável pa
 No mobile, a ordem da tela de aula é:
 
 ```text
-Player -> Título -> Descrição -> Status -> Botões -> Conteúdo da aula -> Progresso
+Player -> Título -> Descrição -> Status -> Botões -> Progresso -> Conteúdo da aula
 ```
 
 O conteúdo da aula permanece visível e compacto no mobile, sem accordion recolhido. No desktop, a lista volta para a lateral esquerda e permanece fixa durante a rolagem.
@@ -163,6 +164,10 @@ O conteúdo da aula permanece visível e compacto no mobile, sem accordion recol
 Links de aulas vindos de listas internas adicionam `?focus=player`. Ao carregar a nova aula, a página rola suavemente até o player considerando o cabeçalho fixo e remove o parâmetro da URL com `history.replaceState`. A rolagem respeita `prefers-reduced-motion`.
 
 O player não usa overlay permanente, opacidade reduzida, filtro, pseudo-elemento, fundo escuro ou camada acima do iframe. Depois do carregamento, a área visível contém apenas o iframe e os controles nativos do provedor.
+
+Para evitar corte dos controles nativos, o wrapper do iframe não usa `overflow: hidden`, não aplica `border-radius` com clipping e não usa `transform`, filtro ou opacidade sobre o player. Embeds do Google Drive recebem uma folga vertical no mobile para preservar a barra inferior e os botões nativos.
+
+O escurecimento que aparece durante a reprodução de arquivos do Google Drive vem da interface interna renderizada pelo próprio Google dentro de um iframe cross-origin. A Academy não consegue alterar internamente poster, thumbnail, overlay, brilho, opacidade, loading ou controles desse player. A correção local consiste em não interferir no iframe e em não cortar a interface nativa.
 
 O salvamento de progresso continua igual:
 

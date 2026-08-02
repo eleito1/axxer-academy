@@ -62,6 +62,9 @@ class UxExperienceTest extends TestCase
             ->assertSee('scrollToPlayerFromLessonList')
             ->assertSee("url.searchParams.delete('focus')", false)
             ->assertSee('prefers-reduced-motion', false)
+            ->assertSee('overflow: visible', false)
+            ->assertSee('min-height: 36px', false)
+            ->assertSee('padding: 5px 0', false)
             ->assertDontSee('.player::before', false)
             ->assertDontSee('.player::after', false)
             ->assertDontSee('<details', false)
@@ -73,13 +76,38 @@ class UxExperienceTest extends TestCase
         $this->assertLessThan(strpos($content, 'id="lesson-title"'), strpos($content, 'id="lesson-player"'));
         $this->assertLessThan(strpos($content, 'class="lesson-actions"'), strpos($content, 'id="lesson-title"'));
         $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'class="lesson-actions"'));
-        $lessonListPosition = strpos($content, '<div class="lesson-list">');
+        $lessonActionsPosition = strpos($content, 'class="lesson-actions"');
+        $curriculumPosition = strpos($content, 'id="course-curriculum"');
         $progressPosition = strpos($content, 'id="course-progress"');
-        $this->assertTrue($progressPosition > $lessonListPosition);
+        $this->assertTrue($progressPosition > $lessonActionsPosition);
+        $this->assertTrue($progressPosition < $curriculumPosition);
+        $this->assertStringContainsString(".player {\n            position: relative;\n            overflow: visible;", $content);
+        $this->assertStringNotContainsString(".player {\n            position: relative;\n            overflow: hidden;", $content);
 
         $this->assertSame(1, substr_count($content, 'aria-current="page"'));
         $this->assertSame(1, substr_count($content, 'Aula atual:'));
         $this->assertSame(1, substr_count($content, 'role="progressbar"'));
+    }
+
+    public function test_google_drive_player_wrapper_does_not_clip_native_controls(): void
+    {
+        [$student, $product, $course, $module, $lesson] = $this->learningTree();
+        $lesson->update(['video_url' => 'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view?usp=sharing']);
+
+        $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
+            ->assertOk()
+            ->assertSee('class="player drive-player"', false)
+            ->assertSee('data-provider="google-drive"', false)
+            ->assertSee('loading="eager"', false)
+            ->assertSee('https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/preview', false)
+            ->assertSee('.player.drive-player { min-height: clamp(224px, 58vw, 260px); }', false)
+            ->assertSee('.player.drive-player { min-height: 0; }', false)
+            ->assertDontSee('.player::before', false)
+            ->assertDontSee('.player::after', false);
+
+        $content = $response->getContent();
+        $this->assertStringContainsString(".player {\n            position: relative;\n            overflow: visible;", $content);
+        $this->assertStringNotContainsString(".player {\n            position: relative;\n            overflow: hidden;", $content);
     }
 
     public function test_completed_lesson_keeps_compact_buttons_progress_and_certificate_state(): void
