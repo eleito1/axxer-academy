@@ -34,7 +34,7 @@ class UxExperienceTest extends TestCase
             ->assertSee($course->title);
     }
 
-    public function test_lesson_player_uses_mobile_curriculum_accordion_without_duplicate_current_state(): void
+    public function test_lesson_player_keeps_mobile_player_first_with_visible_compact_curriculum(): void
     {
         [$student, $product, $course, $module, $lesson] = $this->learningTree();
         Lesson::create([
@@ -52,9 +52,10 @@ class UxExperienceTest extends TestCase
             ->assertSee('id="lesson-player"', false)
             ->assertSee('id="lesson-title"', false)
             ->assertSee('id="course-curriculum"', false)
-            ->assertSee('Conteúdo do curso')
-            ->assertSee('aria-controls="course-curriculum-body"', false)
-            ->assertSee('aria-expanded="false"', false)
+            ->assertSee('Conteúdo da aula')
+            ->assertSee('lesson-list', false)
+            ->assertSee('lesson-status', false)
+            ->assertSee('Em andamento')
             ->assertSee('aria-current="page"', false)
             ->assertSee('Aula atual:')
             ->assertSee('?focus=player', false)
@@ -62,21 +63,26 @@ class UxExperienceTest extends TestCase
             ->assertSee("url.searchParams.delete('focus')", false)
             ->assertSee('prefers-reduced-motion', false)
             ->assertDontSee('.player::before', false)
-            ->assertDontSee('.player::after', false);
+            ->assertDontSee('.player::after', false)
+            ->assertDontSee('<details', false)
+            ->assertDontSee('aria-expanded', false)
+            ->assertDontSee('background: #091329', false);
 
         $content = $response->getContent();
         $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'id="lesson-player-card"'));
         $this->assertLessThan(strpos($content, 'id="lesson-title"'), strpos($content, 'id="lesson-player"'));
         $this->assertLessThan(strpos($content, 'class="lesson-actions"'), strpos($content, 'id="lesson-title"'));
-        $this->assertLessThan(strpos($content, 'id="course-progress"'), strpos($content, 'class="lesson-actions"'));
-        $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'id="course-progress"'));
+        $this->assertLessThan(strpos($content, 'id="course-curriculum"'), strpos($content, 'class="lesson-actions"'));
+        $lessonListPosition = strpos($content, '<div class="lesson-list">');
+        $progressPosition = strpos($content, 'id="course-progress"');
+        $this->assertTrue($progressPosition > $lessonListPosition);
 
         $this->assertSame(1, substr_count($content, 'aria-current="page"'));
         $this->assertSame(1, substr_count($content, 'Aula atual:'));
         $this->assertSame(1, substr_count($content, 'role="progressbar"'));
     }
 
-    public function test_completed_lesson_keeps_large_buttons_progress_and_certificate_state(): void
+    public function test_completed_lesson_keeps_compact_buttons_progress_and_certificate_state(): void
     {
         [$student, $product, $course, $module, $lesson] = $this->learningTree();
         LessonProgress::create([
