@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AdminDashboardService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -35,7 +36,16 @@ class UserController extends Controller
 
     public function products(Request $request, User $user): RedirectResponse
     {
-        $data = $request->validate(['products' => ['array'], 'products.*' => ['integer', 'exists:products,id']]);
+        $data = $request->validate(
+            [
+                'products' => ['array'],
+                'products.*' => [
+                    'integer',
+                    Rule::exists('products', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNull('deleted_at')),
+                ],
+            ],
+            ['products.*.exists' => 'Selecione somente produtos ativos e disponíveis.']
+        );
         $user->products()->sync($data['products'] ?? []);
 
         return back()->with('success', 'Produtos liberados atualizados.');

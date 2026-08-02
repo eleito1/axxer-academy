@@ -25,14 +25,13 @@ class CourseController extends Controller
         return view('admin.courses.form', [
             'product' => $product,
             'course' => new Course,
-            'products' => Product::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
     public function store(CourseRequest $request, Product $product): RedirectResponse
     {
         $this->authorize('create', Course::class);
-        $course = Course::create($request->validated() + ['published' => $request->boolean('published')]);
+        $course = Course::create($request->validated() + ['product_id' => $product->id, 'published' => $request->boolean('published')]);
 
         return redirect()->route('admin.products.courses.index', $course->product_id)->with('success', 'Curso criado.');
     }
@@ -44,14 +43,13 @@ class CourseController extends Controller
         return view('admin.courses.form', [
             'product' => $product,
             'course' => $course,
-            'products' => Product::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 
     public function update(CourseRequest $request, Product $product, Course $course): RedirectResponse
     {
         $this->authorize('update', $course);
-        $course->update($request->validated() + ['published' => $request->boolean('published')]);
+        $course->update($request->validated() + ['product_id' => $product->id, 'published' => $request->boolean('published')]);
 
         return redirect()->route('admin.products.courses.index', $course->product_id)->with('success', 'Curso atualizado.');
     }

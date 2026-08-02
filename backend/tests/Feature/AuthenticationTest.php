@@ -119,6 +119,48 @@ class AuthenticationTest extends TestCase
             ->assertSessionHasErrors(['interested_product_id' => 'O produto de interesse é obrigatório.']);
     }
 
+    public function test_registration_rejects_inactive_soft_deleted_or_missing_interested_product(): void
+    {
+        $inactive = Product::create(['name' => 'Produto inativo', 'is_active' => false]);
+        $deleted = Product::create(['name' => 'Produto excluído']);
+        $deleted->delete();
+
+        foreach ([$inactive->id, $deleted->id, 999999] as $productId) {
+            $data = $this->validRegistrationData($inactive, [
+                'email' => "maria-{$productId}@example.com",
+                'interested_product_id' => $productId,
+            ]);
+
+            $this->from('/cadastro')->post('/cadastro', $data)
+                ->assertRedirect('/cadastro')
+                ->assertSessionHasErrors(['interested_product_id' => 'Selecione um produto de interesse ativo e disponível.']);
+        }
+
+        $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_admin_product_release_rejects_inactive_soft_deleted_or_missing_products_and_preserves_existing_links(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        $student = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Student]);
+        $valid = Product::create(['name' => 'AXXER Optical']);
+        $inactive = Product::create(['name' => 'Produto inativo', 'is_active' => false]);
+        $deleted = Product::create(['name' => 'Produto excluído']);
+        $deleted->delete();
+        $student->products()->attach($valid);
+
+        foreach ([$inactive->id, $deleted->id, 999999] as $productId) {
+            $this->actingAs($admin)
+                ->from(route('admin.dashboard'))
+                ->put(route('admin.users.products', $student), ['products' => [$valid->id, $productId]])
+                ->assertRedirect(route('admin.dashboard'))
+                ->assertSessionHasErrors(['products.1' => 'Selecione somente produtos ativos e disponíveis.']);
+
+            $this->assertTrue($student->fresh()->products()->whereKey($valid->id)->exists());
+            $this->assertFalse($student->fresh()->products()->whereKey($productId)->exists());
+        }
+    }
+
     public function test_registration_rejects_invalid_whatsapp_with_friendly_message(): void
     {
         $product = Product::create(['name' => 'AXXER Optical']);

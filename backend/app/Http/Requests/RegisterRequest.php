@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
@@ -22,7 +23,10 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['bail', 'required', 'string', Password::min(8), 'confirmed'],
             'password_confirmation' => ['required', 'string'],
-            'interested_product_id' => ['required', 'exists:products,id'],
+            'interested_product_id' => [
+                'required',
+                Rule::exists('products', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNull('deleted_at')),
+            ],
         ];
     }
 
@@ -43,7 +47,7 @@ class RegisterRequest extends FormRequest
             'password.confirmed' => 'A confirmação da senha não corresponde.',
             'password_confirmation.required' => 'A confirmação da senha é obrigatória.',
             'interested_product_id.required' => 'O produto de interesse é obrigatório.',
-            'interested_product_id.exists' => 'Selecione um produto de interesse válido.',
+            'interested_product_id.exists' => 'Selecione um produto de interesse ativo e disponível.',
         ];
     }
 

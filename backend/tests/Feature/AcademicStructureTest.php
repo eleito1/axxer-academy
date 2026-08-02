@@ -41,6 +41,53 @@ class AcademicStructureTest extends TestCase
         $this->assertSame('Aula 1', $product->courses->first()->modules->first()->lessons->first()->title);
     }
 
+    public function test_course_uses_nested_route_product_as_source_of_truth_when_payload_is_forged(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'status' => UserStatus::Approved]);
+        $routeProduct = Product::create(['name' => 'AXXER Optical']);
+        $forgedProduct = Product::create(['name' => 'DIRETOCOM']);
+        Course::create(['product_id' => $forgedProduct->id, 'title' => 'Duplicado', 'slug' => 'vendas', 'published' => true]);
+
+        $this->actingAs($admin)->post(route('admin.products.courses.store', $routeProduct), [
+            'product_id' => $forgedProduct->id,
+            'title' => 'Vendas',
+            'slug' => 'vendas',
+            'description' => 'Curso',
+            'order' => 1,
+            'published' => 1,
+        ])->assertRedirect(route('admin.products.courses.index', $routeProduct));
+
+        $this->assertDatabaseHas('courses', [
+            'product_id' => $routeProduct->id,
+            'title' => 'Vendas',
+            'slug' => 'vendas',
+        ]);
+    }
+
+    public function test_course_update_keeps_nested_route_product_even_when_payload_tries_to_move_it(): void
+    {
+        $admin = User::factory()->create(['role' => UserRole::Admin, 'status' => UserStatus::Approved]);
+        $routeProduct = Product::create(['name' => 'AXXER Optical']);
+        $forgedProduct = Product::create(['name' => 'DIRETOCOM']);
+        $course = Course::create(['product_id' => $routeProduct->id, 'title' => 'Vendas', 'slug' => 'vendas', 'published' => true]);
+
+        $this->actingAs($admin)->put(route('admin.products.courses.update', [$routeProduct, $course]), [
+            'product_id' => $forgedProduct->id,
+            'title' => 'Vendas atualizadas',
+            'slug' => 'vendas-atualizadas',
+            'description' => 'Curso',
+            'order' => 2,
+            'published' => 1,
+        ])->assertRedirect(route('admin.products.courses.index', $routeProduct));
+
+        $this->assertDatabaseHas('courses', [
+            'id' => $course->id,
+            'product_id' => $routeProduct->id,
+            'title' => 'Vendas atualizadas',
+            'slug' => 'vendas-atualizadas',
+        ]);
+    }
+
     public function test_student_only_sees_published_content_from_released_products(): void
     {
         [$student, $product, $course, $module, $lesson] = $this->academicTree();
