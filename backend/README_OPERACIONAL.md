@@ -20,6 +20,16 @@ O cadastro público cria alunos com status `pendente`. Somente usuários `aprova
 
 O menu administrativo `Produtos` permite gerenciar a hierarquia Produto → Curso → Módulo → Aula. A ordem é definida por um número inteiro; cursos e aulas podem ficar em rascunho ou publicados. Alunos visualizam somente produtos liberados e conteúdo publicado.
 
+## Criadores
+
+O papel `creator` acessa a área `/creator` e administra somente os cursos em que `courses.creator_id` aponta para o próprio usuário. Administradores continuam usando `/admin` e veem todos os cursos, inclusive cursos sem criador responsável.
+
+Cursos sem `creator_id` não aparecem para creators e não recebem atribuição automática. A propriedade de módulos e aulas é sempre derivada do curso pai; não há `creator_id` duplicado em módulos ou aulas.
+
+Na criação de curso, o creator é vinculado automaticamente como responsável. Payload com `creator_id` enviado por creator é rejeitado. Administradores podem informar ou trocar o criador, mas apenas para usuários com papel `creator`.
+
+Esta fase não implementa upload. URLs de capa, vídeo e material complementar continuam sendo informadas manualmente.
+
 O player aceita URLs do YouTube (inclusive não listado) e arquivos compartilhados do Google Drive. Para o Drive, configure o arquivo como “Qualquer pessoa com o link — Visualizador”.
 
 O player do Google Drive é renderizado em iframe cross-origin. Escurecimento durante a reprodução, overlay interno, poster, thumbnail e controles nativos pertencem ao próprio Google Drive e não podem ser alterados pela Academy. A interface local deve apenas preservar espaço e evitar clipping do iframe, sem `overflow: hidden`, filtro, opacidade ou camada visual acima do player.

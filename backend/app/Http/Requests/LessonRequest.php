@@ -8,7 +8,7 @@ class LessonRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isAdmin() ?? false;
+        return $this->user()?->canManageOwnedCourses() ?? false;
     }
 
     public function rules(): array

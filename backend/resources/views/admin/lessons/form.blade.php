@@ -1,1 +1,41 @@
-<x-app-layout title="Aula — Administração"><section class="card auth"><h1>{{ $lesson->exists?'Editar':'Nova' }} aula</h1><form method="POST" action="{{ $lesson->exists?route('admin.products.courses.modules.lessons.update',[$product,$course,$module,$lesson]):route('admin.products.courses.modules.lessons.store',[$product,$course,$module]) }}">@csrf @if($lesson->exists)@method('PUT')@endif<div class="field"><label>Título</label><input name="title" value="{{ old('title',$lesson->title) }}" required></div><div class="field"><label>Descrição</label><textarea name="description" rows="5" style="width:100%">{{ old('description',$lesson->description) }}</textarea></div><div class="field"><label>URL do vídeo (YouTube ou Google Drive)</label><input type="url" name="video_url" value="{{ old('video_url',$lesson->video_url) }}" required></div><div class="grid"><div class="field"><label>Duração em segundos</label><input type="number" min="0" name="duration" value="{{ old('duration',$lesson->duration) }}"></div><div class="field"><label>Ordem</label><input type="number" min="0" name="order" value="{{ old('order',$lesson->order??0) }}" required></div></div><div class="field"><label>URL do material complementar</label><input type="url" name="support_material" value="{{ old('support_material',$lesson->support_material) }}"></div><label><input type="checkbox" name="published" value="1" @checked(old('published',$lesson->published))> Publicada</label><div style="margin-top:20px"><button class="btn">Salvar</button></div></form></section></x-app-layout>
+@php($routePrefix = $routePrefix ?? 'admin')
+
+<x-app-layout title="Aula — Administração">
+    <section class="card auth">
+        <h1>{{ $lesson->exists ? 'Editar' : 'Nova' }} aula</h1>
+        <form method="POST" action="{{ $lesson->exists ? route($routePrefix.'.products.courses.modules.lessons.update', [$product, $course, $module, $lesson]) : route($routePrefix.'.products.courses.modules.lessons.store', [$product, $course, $module]) }}">
+            @csrf
+            @if($lesson->exists)
+                @method('PUT')
+            @endif
+            <div class="field">
+                <label>Título</label>
+                <input name="title" value="{{ old('title', $lesson->title) }}" required>
+            </div>
+            <div class="field">
+                <label>Descrição</label>
+                <textarea name="description" rows="5" style="width:100%">{{ old('description', $lesson->description) }}</textarea>
+            </div>
+            <div class="field">
+                <label>URL do vídeo (YouTube ou Google Drive)</label>
+                <input type="url" name="video_url" value="{{ old('video_url', $lesson->video_url) }}" required>
+            </div>
+            <div class="grid">
+                <div class="field">
+                    <label>Duração em segundos</label>
+                    <input type="number" min="0" name="duration" value="{{ old('duration', $lesson->duration) }}">
+                </div>
+                <div class="field">
+                    <label>Ordem</label>
+                    <input type="number" min="0" name="order" value="{{ old('order', $lesson->order ?? 0) }}" required>
+                </div>
+            </div>
+            <div class="field">
+                <label>URL do material complementar</label>
+                <input type="url" name="support_material" value="{{ old('support_material', $lesson->support_material) }}">
+            </div>
+            <label><input type="checkbox" name="published" value="1" @checked(old('published', $lesson->published))> Publicada</label>
+            <div style="margin-top:20px"><button class="btn">Salvar</button></div>
+        </form>
+    </section>
+</x-app-layout>

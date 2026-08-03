@@ -102,6 +102,27 @@ Produtos controlam acesso. Cursos e aulas podem ficar publicados ou em rascunho.
 
 O cadastro público cria alunos com status `pendente`. Usuários `aprovado` acessam o dashboard. Usuários `pendente` ou `bloqueado` ficam na tela de status.
 
+## Papéis E Criadores
+
+O sistema trabalha com três papéis:
+
+- `admin`: administra toda a plataforma e visualiza todos os produtos, cursos, módulos e aulas;
+- `creator`: administra somente cursos em que aparece como criador responsável;
+- `aluno`: acessa apenas a experiência acadêmica liberada.
+
+A propriedade individual dos cursos fica em `courses.creator_id`, uma chave estrangeira nullable para `users`. A relação é:
+
+```text
+User -> createdCourses
+Course -> creator
+```
+
+Módulos e aulas não duplicam `creator_id`: a propriedade é derivada por `lesson -> module -> course -> creator_id`.
+
+Cursos antigos ou criados sem criador continuam visíveis para administradores, mas não aparecem para creators. Creators não podem criar em nome de outro usuário, alterar `creator_id`, acessar curso alheio por URL forjada nem manipular `product_id`, `course_id`, `module_id` ou `lesson_id` pelo payload.
+
+Administradores podem atribuir ou trocar o criador responsável de um curso, selecionando apenas usuários com papel `creator`.
+
 ## UX 2.x
 
 A fase UX 2.x prioriza:
@@ -195,6 +216,10 @@ A UX 2.0 inclui:
 As telas usam CSS local e componentes Blade simples, sem novas dependências JavaScript.
 
 O player usa `aspect-ratio` para reduzir reflow e layout shift. Microinterações são feitas com transições curtas em CSS.
+
+## Upload
+
+A fase Creator 1A não implementa upload de arquivos. Campos de imagem, vídeo e material complementar continuam recebendo URLs.
 
 ## Banco E Segurança
 

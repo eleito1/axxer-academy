@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->hasMany(LessonProgress::class);
     }
 
+    public function createdCourses(): HasMany
+    {
+        return $this->hasMany(Course::class, 'creator_id');
+    }
+
     public function isApproved(): bool
     {
         return $this->status === UserStatus::Approved;
@@ -83,5 +88,15 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === UserRole::Admin;
+    }
+
+    public function isCreator(): bool
+    {
+        return $this->role === UserRole::Creator;
+    }
+
+    public function canManageOwnedCourses(): bool
+    {
+        return $this->isAdmin() || $this->isCreator();
     }
 }

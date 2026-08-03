@@ -19,16 +19,16 @@ class LessonPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canManageOwnedCourses();
     }
 
     public function update(User $user, Lesson $lesson): bool
     {
-        return $user->isAdmin();
+        return $user->can('update', $lesson->module);
     }
 
     public function delete(User $user, Lesson $lesson): bool
     {
-        return $user->isAdmin();
+        return $user->can('delete', $lesson->module);
     }
 }

@@ -1,1 +1,30 @@
-<x-app-layout title="Aulas — {{ $module->title }}"><div class="actions" style="justify-content:space-between"><div><a href="{{ route('admin.products.courses.modules.index',[$product,$course]) }}">← Módulos</a><h1>Aulas de {{ $module->title }}</h1></div><a class="btn" href="{{ route('admin.products.courses.modules.lessons.create',[$product,$course,$module]) }}">Nova aula</a></div><section class="card">@forelse($lessons as $lesson)<article class="user"><strong>#{{ $lesson->order }} · {{ $lesson->title }}</strong> <span class="badge {{ $lesson->published?'aprovado':'' }}">{{ $lesson->published?'PUBLICADA':'RASCUNHO' }}</span><p class="muted">{{ $lesson->duration ? gmdate('i:s',$lesson->duration) : 'Sem duração' }}</p><div class="actions"><a class="btn secondary" href="{{ route('admin.products.courses.modules.lessons.edit',[$product,$course,$module,$lesson]) }}">Editar</a><form method="POST" action="{{ route('admin.products.courses.modules.lessons.destroy',[$product,$course,$module,$lesson]) }}">@csrf @method('DELETE')<button class="btn danger">Excluir</button></form></div></article>@empty<p>Nenhuma aula cadastrada.</p>@endforelse</section></x-app-layout>
+@php($routePrefix = $routePrefix ?? 'admin')
+
+<x-app-layout title="Aulas — {{ $module->title }}">
+    <div class="actions" style="justify-content:space-between">
+        <div>
+            <a href="{{ route($routePrefix.'.products.courses.modules.index', [$product, $course]) }}">← Módulos</a>
+            <h1>Aulas de {{ $module->title }}</h1>
+        </div>
+        <a class="btn" href="{{ route($routePrefix.'.products.courses.modules.lessons.create', [$product, $course, $module]) }}">Nova aula</a>
+    </div>
+    <section class="card">
+        @forelse($lessons as $lesson)
+            <article class="user">
+                <strong>#{{ $lesson->order }} · {{ $lesson->title }}</strong>
+                <span class="badge {{ $lesson->published ? 'aprovado' : '' }}">{{ $lesson->published ? 'PUBLICADA' : 'RASCUNHO' }}</span>
+                <p class="muted">{{ $lesson->duration ? gmdate('i:s', $lesson->duration) : 'Sem duração' }}</p>
+                <div class="actions">
+                    <a class="btn secondary" href="{{ route($routePrefix.'.products.courses.modules.lessons.edit', [$product, $course, $module, $lesson]) }}">Editar</a>
+                    <form method="POST" action="{{ route($routePrefix.'.products.courses.modules.lessons.destroy', [$product, $course, $module, $lesson]) }}">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn danger">Excluir</button>
+                    </form>
+                </div>
+            </article>
+        @empty
+            <p>Nenhuma aula cadastrada.</p>
+        @endforelse
+    </section>
+</x-app-layout>

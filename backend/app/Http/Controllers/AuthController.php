@@ -34,7 +34,11 @@ class AuthController extends Controller
             return redirect()->route('account.status');
         }
 
-        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('dashboard'));
+        return redirect()->intended(match (true) {
+            $user->isAdmin() => route('admin.dashboard'),
+            $user->isCreator() => route('creator.dashboard'),
+            default => route('dashboard'),
+        });
     }
 
     public function showRegister(): View

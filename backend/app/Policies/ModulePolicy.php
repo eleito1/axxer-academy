@@ -19,16 +19,16 @@ class ModulePolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->canManageOwnedCourses();
     }
 
     public function update(User $user, Module $module): bool
     {
-        return $user->isAdmin();
+        return $user->can('update', $module->course);
     }
 
     public function delete(User $user, Module $module): bool
     {
-        return $user->isAdmin();
+        return $user->can('delete', $module->course);
     }
 }

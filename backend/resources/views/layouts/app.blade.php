@@ -380,6 +380,9 @@
                     <a href="{{ route('admin.dashboard') }}">Admin</a>
                     <a href="{{ route('admin.products.index') }}">Produtos</a>
                 @endif
+                @if(auth()->user()->isCreator())
+                    <a href="{{ route('creator.dashboard') }}">Criador</a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit">Sair</button>
