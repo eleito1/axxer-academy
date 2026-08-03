@@ -84,6 +84,17 @@
             border: 0;
             background: var(--surface);
         }
+        .lesson-player-ratio video {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            margin: 0;
+            border: 0;
+            background: #000;
+        }
         .lesson-info { display: grid; gap: 10px; padding: 18px 0 0; }
         .lesson-actions { display: grid; gap: 7px; margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--line); }
         .lesson-actions .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; }
@@ -122,9 +133,15 @@
         <div class="classroom">
             <section id="lesson-player-card" class="card player-card" tabindex="-1" aria-labelledby="lesson-title">
                 @php($isDrivePlayer = str_contains($embedUrl, 'drive.google.com'))
-                <div class="lesson-player-shell" id="lesson-player" data-provider="{{ $isDrivePlayer ? 'google-drive' : 'standard' }}">
+                <div class="lesson-player-shell" id="lesson-player" data-provider="{{ $isNativeVideo ? 'hostinger' : ($isDrivePlayer ? 'google-drive' : 'standard') }}">
                     <div class="lesson-player-ratio">
-                        <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                        @if($isNativeVideo)
+                            <video id="native-lesson-video" controls playsinline preload="metadata">
+                                <source src="{{ $embedUrl }}" type="video/{{ $lesson->video_extension === 'mov' ? 'quicktime' : $lesson->video_extension }}">
+                            </video>
+                        @else
+                            <iframe src="{{ $embedUrl }}" title="{{ $lesson->title }}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="eager" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                        @endif
                     </div>
                 </div>
 
@@ -205,6 +222,7 @@
             const progressFill = progressTrack.querySelector('.progress-fill');
             const certificate = document.getElementById('certificate');
             const playerCard = document.getElementById('lesson-player-card');
+            const nativePlayer = document.getElementById('native-lesson-video');
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
             let seconds = {{ $progress->last_seconds }};
             let lastTick = Date.now();
@@ -233,7 +251,9 @@
             }
 
             async function save(done = false, keepalive = false) {
-                if (document.visibilityState === 'visible') {
+                if (nativePlayer && Number.isFinite(nativePlayer.currentTime)) {
+                    seconds = Math.max(0, Math.round(nativePlayer.currentTime));
+                } else if (document.visibilityState === 'visible') {
                     seconds += Math.max(0, Math.round((Date.now() - lastTick) / 1000));
                 }
                 lastTick = Date.now();
@@ -261,6 +281,24 @@
                 } finally {
                     button.removeAttribute('aria-busy');
                 }
+            }
+
+            if (nativePlayer) {
+                nativePlayer.addEventListener('loadedmetadata', () => {
+                    if (seconds > 0 && Number.isFinite(nativePlayer.duration) && seconds < nativePlayer.duration) {
+                        nativePlayer.currentTime = seconds;
+                    }
+                });
+                nativePlayer.addEventListener('timeupdate', () => {
+                    if (Number.isFinite(nativePlayer.currentTime)) {
+                        seconds = Math.max(0, Math.round(nativePlayer.currentTime));
+                    }
+                });
+                nativePlayer.addEventListener('play', () => {
+                    lastTick = Date.now();
+                });
+                nativePlayer.addEventListener('pause', () => save());
+                nativePlayer.addEventListener('ended', () => save(true));
             }
 
             button.addEventListener('click', () => save(true));

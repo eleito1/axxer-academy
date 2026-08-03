@@ -73,7 +73,8 @@ class AcademyController extends Controller
 
         return view('academy.lesson', [
             'product' => $product, 'course' => $course, 'module' => $module, 'lesson' => $lesson,
-            'embedUrl' => $embed->from($lesson->video_url, $currentProgress->last_seconds), 'progress' => $currentProgress,
+            'embedUrl' => $embed->from($lesson->videoUrl(), $currentProgress->last_seconds), 'isNativeVideo' => $lesson->video_provider === 'hostinger',
+            'progress' => $currentProgress,
             'progressUrl' => route('academy.lessons.progress', [$product, $course, $module, $lesson]),
             'courseProgress' => $progress->forCourse($user, $course), 'sidebar' => $sidebar,
             'previousUrl' => $previous ? route('academy.lessons.show', [$product, $course, $previous->module, $previous]) : null,

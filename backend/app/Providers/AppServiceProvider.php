@@ -10,6 +10,8 @@ use App\Policies\CoursePolicy;
 use App\Policies\LessonPolicy;
 use App\Policies\ModulePolicy;
 use App\Policies\ProductPolicy;
+use App\Services\Videos\HostingerStorage;
+use App\Services\Videos\VideoStorage;
 use App\Support\DatabaseCommandGuard;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Database\Console\Seeds\SeedCommand;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(DatabaseCommandGuard::class);
+        $this->app->bind(VideoStorage::class, HostingerStorage::class);
     }
 
     /**

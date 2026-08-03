@@ -10,6 +10,8 @@ use App\Models\Module;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AcademicStructureTest extends TestCase
@@ -20,6 +22,8 @@ class AcademicStructureTest extends TestCase
     {
         $admin = User::factory()->create(['role' => UserRole::Admin, 'status' => UserStatus::Approved]);
         $product = Product::create(['name' => 'AXXER Optical']);
+        Storage::fake('video_public');
+        config(['filesystems.disks.video_public.root' => '/fake-video-root', 'filesystems.disks.video_public.url' => 'https://axxeracademy.com.br/videos']);
 
         $this->actingAs($admin)->post(route('admin.products.courses.store', $product), [
             'product_id' => $product->id, 'title' => 'Técnicas de Vendas', 'slug' => 'tecnicas-de-vendas',
@@ -33,11 +37,11 @@ class AcademicStructureTest extends TestCase
 
         $module = Module::firstOrFail();
         $this->actingAs($admin)->post(route('admin.products.courses.modules.lessons.store', [$product, $course, $module]), [
-            'title' => 'Aula 1', 'video_url' => 'https://youtu.be/abcdefghijk', 'duration' => 300,
+            'title' => 'Aula 1', 'video' => UploadedFile::fake()->create('aula.mp4', 1024, 'video/mp4'), 'duration' => 300,
             'order' => 1, 'published' => 1,
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('lessons', ['module_id' => $module->id, 'title' => 'Aula 1', 'published' => true]);
+        $this->assertDatabaseHas('lessons', ['module_id' => $module->id, 'title' => 'Aula 1', 'published' => true, 'video_provider' => 'hostinger']);
         $this->assertSame('Aula 1', $product->courses->first()->modules->first()->lessons->first()->title);
     }
 

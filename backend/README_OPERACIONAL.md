@@ -28,7 +28,29 @@ Cursos sem `creator_id` não aparecem para creators e não recebem atribuição 
 
 Na criação de curso, o creator é vinculado automaticamente como responsável. Payload com `creator_id` enviado por creator é rejeitado. Administradores podem informar ou trocar o criador, mas apenas para usuários com papel `creator`.
 
-Esta fase não implementa upload. URLs de capa, vídeo e material complementar continuam sendo informadas manualmente.
+As aulas usam upload nativo de vídeo em requisição multipart comum, sem chunks nesta fase. O limite padrão exibido na tela é 500 MB e pode ser ajustado por `VIDEO_UPLOAD_MAX_MB`, respeitando também `upload_max_filesize`, `post_max_size`, timeouts do PHP/PHP-FPM, servidor web, proxy, navegador e limites da hospedagem.
+
+Configure o disco `video_public` fora do Git:
+
+```dotenv
+VIDEO_STORAGE_PATH=/caminho/absoluto/para/public_html/videos
+VIDEO_PUBLIC_URL=https://dominio.example/videos
+VIDEO_UPLOAD_MAX_MB=500
+```
+
+Em produção, a intenção é que `VIDEO_STORAGE_PATH` aponte para o diretório `public_html/videos` do domínio e que `VIDEO_PUBLIC_URL` sirva a mesma pasta por HTTPS. A aplicação Laravel pode estar em outra pasta; o disco suporta essa separação porque usa caminho absoluto configurado. Sem `VIDEO_STORAGE_PATH` ou `VIDEO_PUBLIC_URL`, o upload falha claramente e não usa fallback para `backend/public`, `storage/app/public` ou `backend/storage`.
+
+O formulário aceita MP4, MOV e WEBM e armazena os arquivos em uma estrutura isolada por criador, curso e aula:
+
+```text
+VIDEO_STORAGE_PATH/creator-{id}/curso-{id}/aula-{id}/arquivo-gerado.mp4
+```
+
+O arquivo público recebe nome gerado a partir do título da aula com sufixo único; o nome original é salvo apenas como metadado. `video_url` permanece para retrocompatibilidade com aulas antigas e continua sendo resolvido pelo player junto com vídeos nativos.
+
+Na substituição de vídeo, o arquivo novo é enviado antes de alterar o banco; se a atualização falhar, o arquivo novo é removido e o antigo continua válido. Após sucesso, o arquivo antigo é removido. Como a exclusão de aula é soft delete, o vídeo é mantido para permitir restauração; uma limpeza futura de órfãos deve tratar descartes definitivos.
+
+URLs de capa e material complementar continuam sendo informadas manualmente.
 
 O player aceita URLs do YouTube (inclusive não listado) e arquivos compartilhados do Google Drive. Para o Drive, configure o arquivo como “Qualquer pessoa com o link — Visualizador”.
 

@@ -10,6 +10,8 @@ use App\Models\Module;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CreatorOwnershipTest extends TestCase
@@ -181,6 +183,8 @@ class CreatorOwnershipTest extends TestCase
         $creator = $this->approvedUser(UserRole::Creator);
         [$product, $course, $module] = $this->fullCourseFor($creator);
         [, $foreignCourse, $foreignModule] = $this->fullCourseFor($this->approvedUser(UserRole::Creator), 'Curso externo');
+        Storage::fake('video_public');
+        config(['filesystems.disks.video_public.root' => '/fake-video-root', 'filesystems.disks.video_public.url' => 'https://axxeracademy.com.br/videos']);
 
         $this->actingAs($creator)->post(route('creator.products.courses.modules.store', [$product, $course]), [
             'course_id' => $foreignCourse->id,
@@ -197,7 +201,7 @@ class CreatorOwnershipTest extends TestCase
         $this->actingAs($creator)->post(route('creator.products.courses.modules.lessons.store', [$product, $course, $module]), [
             'module_id' => $foreignModule->id,
             'title' => 'Aula segura',
-            'video_url' => 'https://youtu.be/abcdefghijk',
+            'video' => UploadedFile::fake()->create('aula-segura.mp4', 1024, 'video/mp4'),
             'duration' => 120,
             'order' => 2,
             'published' => 1,

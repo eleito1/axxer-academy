@@ -47,6 +47,15 @@ return [
             'report' => false,
         ],
 
+        'video_public' => [
+            'driver' => 'local',
+            'root' => env('VIDEO_STORAGE_PATH'),
+            'url' => env('VIDEO_PUBLIC_URL'),
+            'visibility' => 'public',
+            'throw' => true,
+            'report' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

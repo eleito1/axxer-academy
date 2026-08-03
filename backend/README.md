@@ -217,9 +217,41 @@ As telas usam CSS local e componentes Blade simples, sem novas dependências Jav
 
 O player usa `aspect-ratio` para reduzir reflow e layout shift. Microinterações são feitas com transições curtas em CSS.
 
-## Upload
+## Upload De Vídeos
 
-A fase Creator 1A não implementa upload de arquivos. Campos de imagem, vídeo e material complementar continuam recebendo URLs.
+A criação e edição de aulas usam upload nativo de vídeo em uma requisição multipart comum. A fase atual não usa upload em partes/chunks; por isso o limite exibido na tela é configurável e começa em 500 MB por padrão, não 5 GB.
+
+O formulário aceita MP4, MOV e WEBM com validação de extensão, MIME type e tamanho. O arquivo é movimentado pelo `UploadedFile`/filesystem do Laravel; o fluxo não usa base64, não serializa o vídeo e não lê o arquivo inteiro em memória.
+
+Variáveis esperadas:
+
+```dotenv
+VIDEO_STORAGE_PATH=/caminho/absoluto/para/public_html/videos
+VIDEO_PUBLIC_URL=https://dominio.example/videos
+VIDEO_UPLOAD_MAX_MB=500
+```
+
+Essas variáveis não possuem valores reais versionados. Sem `VIDEO_STORAGE_PATH` ou `VIDEO_PUBLIC_URL`, o upload falha com mensagem clara em vez de gravar silenciosamente em `backend/public`, `storage/app/public` ou `backend/storage`.
+
+O arquivo é armazenado por isolamento acadêmico e de criador:
+
+```text
+VIDEO_STORAGE_PATH/
+  creator-{id}/
+    curso-{id}/
+      aula-{id}/
+        titulo-da-aula-a1b2c3.mp4
+```
+
+O nome original nunca é usado no arquivo público. O sistema gera um slug a partir do título da aula, adiciona um sufixo único e salva metadados como provedor, caminho, nome original, tamanho, extensão e data de upload.
+
+`video_url` permanece no banco para retrocompatibilidade com aulas antigas de YouTube e Google Drive. O player usa `Lesson::videoUrl()` para resolver automaticamente vídeos nativos da Hostinger e URLs externas legadas. Vídeos nativos usam `<video controls playsinline preload="metadata">`; provedores externos continuam usando iframe quando necessário.
+
+O disco atual é `video_public`, configurado em `config/filesystems.php`. Em produção, a intenção operacional é apontar `VIDEO_STORAGE_PATH` para o diretório `public_html/videos` do domínio e `VIDEO_PUBLIC_URL` para a URL pública `/videos`, sem hardcode no código.
+
+Na criação, a aula é criada primeiro para obter `lesson_id`; em seguida o arquivo vai para `creator-{id}/curso-{id}/aula-{id}` e os metadados são salvos. Se o upload ou a atualização de metadados falhar, o registro não fica apontando para vídeo inválido e o arquivo recém-enviado é removido.
+
+Na edição sem troca de vídeo, os metadados existentes permanecem intactos. Na substituição, o novo arquivo é enviado primeiro; o banco é atualizado depois; o arquivo antigo só é removido após sucesso. Como as aulas usam soft delete, a exclusão da aula mantém o arquivo por segurança e restauração; uma varredura futura de órfãos pode remover arquivos de aulas definitivamente descartadas.
 
 ## Banco E Segurança
 

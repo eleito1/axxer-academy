@@ -141,6 +141,43 @@ class UxExperienceTest extends TestCase
         $this->assertStringNotContainsString('width: 100vw', $this->lessonPlayerCss($content));
     }
 
+    public function test_native_hostinger_video_uses_html5_player_and_progress_events(): void
+    {
+        config(['filesystems.disks.video_public.root' => '/fake-video-root', 'filesystems.disks.video_public.url' => 'https://axxeracademy.com.br/videos']);
+        [$student, $product, $course, $module, $lesson] = $this->learningTree();
+        $lesson->update([
+            'video_provider' => 'hostinger',
+            'video_path' => 'creator-1/curso-1/aula-1/primeira-venda-a1b2c3.mp4',
+            'video_url' => 'https://axxeracademy.com.br/videos/creator-1/curso-1/aula-1/primeira-venda-a1b2c3.mp4',
+            'video_extension' => 'mp4',
+        ]);
+
+        $response = $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
+            ->assertOk()
+            ->assertSee('data-provider="hostinger"', false)
+            ->assertSee('<video id="native-lesson-video" controls playsinline preload="metadata">', false)
+            ->assertSee('loadedmetadata', false)
+            ->assertSee('timeupdate', false)
+            ->assertSee('play', false)
+            ->assertSee('pause', false)
+            ->assertSee('ended', false)
+            ->assertSee('currentTime', false)
+            ->assertDontSee('<iframe', false);
+
+        $this->assertStringContainsString('https://axxeracademy.com.br/videos/creator-1/curso-1/aula-1/primeira-venda-a1b2c3.mp4', $response->getContent());
+    }
+
+    public function test_external_youtube_video_keeps_iframe_player(): void
+    {
+        [$student, $product, $course, $module, $lesson] = $this->learningTree();
+
+        $this->actingAs($student)->get(route('academy.lessons.show', [$product, $course, $module, $lesson]))
+            ->assertOk()
+            ->assertSee('<iframe', false)
+            ->assertSee('https://www.youtube-nocookie.com/embed/abcdefghijk', false)
+            ->assertDontSee('id="native-lesson-video"', false);
+    }
+
     public function test_completed_lesson_keeps_compact_buttons_progress_and_certificate_state(): void
     {
         [$student, $product, $course, $module, $lesson] = $this->learningTree();
