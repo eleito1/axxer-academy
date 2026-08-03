@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
@@ -19,6 +20,7 @@ class UserController extends Controller
         return view('admin.dashboard', [
             'users' => User::query()->with(['products', 'interestedProduct'])->latest()->get(),
             'products' => Product::query()->where('is_active', true)->orderBy('name')->get(),
+            'roles' => UserRole::cases(),
             'stats' => $dashboard->statistics(),
             'topCourses' => $dashboard->topCourses(),
             'activeStudents' => $dashboard->activeStudents(),
@@ -32,6 +34,23 @@ class UserController extends Controller
         $user->update(['status' => UserStatus::from($data['status'])]);
 
         return back()->with('success', 'Status atualizado.');
+    }
+
+    public function role(Request $request, User $user): RedirectResponse
+    {
+        $data = $request->validate(
+            ['role' => ['required', Rule::enum(UserRole::class)]],
+            ['role' => 'Selecione um papel válido.']
+        );
+
+        $role = UserRole::from($data['role']);
+        if ($role !== UserRole::Admin && $this->isLastActiveAdmin($user)) {
+            return back()->withErrors(['role' => 'Não é possível alterar o papel do último administrador ativo.']);
+        }
+
+        $user->update(['role' => $role]);
+
+        return back()->with('success', 'Papel atualizado.');
     }
 
     public function products(Request $request, User $user): RedirectResponse
@@ -49,5 +68,17 @@ class UserController extends Controller
         $user->products()->sync($data['products'] ?? []);
 
         return back()->with('success', 'Produtos liberados atualizados.');
+    }
+
+    private function isLastActiveAdmin(User $user): bool
+    {
+        if ($user->role !== UserRole::Admin || $user->status !== UserStatus::Approved) {
+            return false;
+        }
+
+        return User::query()
+            ->where('role', UserRole::Admin)
+            ->where('status', UserStatus::Approved)
+            ->count() === 1;
     }
 }

@@ -50,6 +50,82 @@ class AuthenticationTest extends TestCase
         $this->assertSame(UserStatus::Approved, $student->fresh()->status);
     }
 
+    public function test_admin_dashboard_allows_selecting_user_role(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Student]);
+
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Papel')
+            ->assertSee('Aluno')
+            ->assertSee('Criador')
+            ->assertSee('Administrador')
+            ->assertSee(route('admin.users.role', User::where('role', UserRole::Student)->first()), false);
+    }
+
+    public function test_admin_can_update_user_role_to_student_creator_and_admin(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        $user = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Student]);
+
+        $this->actingAs($admin)->patch(route('admin.users.role', $user), ['role' => UserRole::Creator->value])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Papel atualizado.');
+        $this->assertSame(UserRole::Creator, $user->fresh()->role);
+
+        $this->actingAs($admin)->patch(route('admin.users.role', $user), ['role' => UserRole::Admin->value])->assertRedirect();
+        $this->assertSame(UserRole::Admin, $user->fresh()->role);
+
+        $this->actingAs($admin)->patch(route('admin.users.role', $user), ['role' => UserRole::Student->value])->assertRedirect();
+        $this->assertSame(UserRole::Student, $user->fresh()->role);
+    }
+
+    public function test_admin_role_update_rejects_invalid_role(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        $user = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Student]);
+
+        $this->actingAs($admin)
+            ->from(route('admin.dashboard'))
+            ->patch(route('admin.users.role', $user), ['role' => 'super-admin'])
+            ->assertRedirect(route('admin.dashboard'))
+            ->assertSessionHasErrors(['role' => 'Selecione um papel válido.']);
+
+        $this->assertSame(UserRole::Student, $user->fresh()->role);
+    }
+
+    public function test_admin_cannot_change_last_active_admin_role_to_student_or_creator(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        User::factory()->create(['status' => UserStatus::Blocked, 'role' => UserRole::Admin]);
+        User::factory()->create(['status' => UserStatus::Pending, 'role' => UserRole::Admin]);
+
+        foreach ([UserRole::Student, UserRole::Creator] as $role) {
+            $this->actingAs($admin)
+                ->from(route('admin.dashboard'))
+                ->patch(route('admin.users.role', $admin), ['role' => $role->value])
+                ->assertRedirect(route('admin.dashboard'))
+                ->assertSessionHasErrors(['role' => 'Não é possível alterar o papel do último administrador ativo.']);
+
+            $this->assertSame(UserRole::Admin, $admin->fresh()->role);
+        }
+    }
+
+    public function test_admin_can_change_admin_role_when_another_active_admin_exists(): void
+    {
+        $admin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+        $otherAdmin = User::factory()->create(['status' => UserStatus::Approved, 'role' => UserRole::Admin]);
+
+        $this->actingAs($otherAdmin)
+            ->patch(route('admin.users.role', $admin), ['role' => UserRole::Creator->value])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Papel atualizado.');
+
+        $this->assertSame(UserRole::Creator, $admin->fresh()->role);
+        $this->assertSame(UserRole::Admin, $otherAdmin->fresh()->role);
+    }
+
     public function test_registration_required_messages_are_clear_and_in_portuguese(): void
     {
         $response = $this->from('/cadastro')->post('/cadastro', []);

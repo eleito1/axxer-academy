@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
             Route::get('/', [UserController::class, 'index'])->name('dashboard');
             Route::patch('/usuarios/{user}/status', [UserController::class, 'status'])->name('users.status');
+            Route::patch('/usuarios/{user}/papel', [UserController::class, 'role'])->name('users.role');
             Route::put('/usuarios/{user}/produtos', [UserController::class, 'products'])->name('users.products');
             Route::resource('products', ProductController::class)->except('show');
             Route::resource('products.courses', CourseController::class)->except('show');
